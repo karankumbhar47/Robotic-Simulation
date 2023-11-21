@@ -1,6 +1,6 @@
 # shortest-paths
 
-A fast Cython implementation of SPFA.
+A fast Cython implementation of Shortest Path First Algorithm.
 
 ## Installation
 
