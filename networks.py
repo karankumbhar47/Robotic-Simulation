@@ -14,6 +14,7 @@ class FCN(nn.Module):
         self.bn2 = nn.BatchNorm2d(32)
         self.conv3 = nn.Conv2d(32, num_output_channels, kernel_size=1, stride=1)
 
+    #used
     def forward(self, x):
         x = self.resnet18.features(x)
         x = self.conv1(x)

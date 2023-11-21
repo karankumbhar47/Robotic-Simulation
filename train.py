@@ -45,9 +45,6 @@ class ReplayBuffer:
         transitions = random.sample(self.buffer, batch_size)
         return Transition(*zip(*transitions))
 
-    def __len__(self):
-        return len(self.buffer)
-
 #used
 class TransitionTracker:
     #used
@@ -91,13 +88,6 @@ class AverageMeter:
         self.sum = 0
         self.count = 0
 
-    #not used
-    def update(self, val, n=1):
-        self.val = val
-        self.sum += val * n
-        self.count += n
-        self.avg = self.sum / self.count
-
 #used
 class Meters:
     def __init__(self):
@@ -111,12 +101,6 @@ class Meters:
     def reset(self):
         for meter in self.meters.values():
             meter.reset()
-
-    #used
-    def update(self, name, val):
-        if name not in self.meters:
-            self.meters[name] = AverageMeter()
-        self.meters[name].update(val)
 
     #used
     def avg(self, name):

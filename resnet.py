@@ -4,7 +4,7 @@ import torch.nn as nn
 
 __all__ = ['ResNet', 'resnet18']
 
-
+#used
 def conv3x3(in_planes, out_planes, stride=1):
     """3x3 convolution with padding"""
     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
@@ -16,6 +16,7 @@ def conv1x1(in_planes, out_planes, stride=1):
     return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
 
 
+#used
 class BasicBlock(nn.Module):
     def __init__(self, inplanes, planes, stride=1, downsample=None):
         super(BasicBlock, self).__init__()
@@ -28,6 +29,7 @@ class BasicBlock(nn.Module):
         self.downsample = downsample
         self.stride = stride
 
+    #used
     def forward(self, x):
         identity = x
 
@@ -104,13 +106,13 @@ class ResNet(nn.Module):
 
         return x
 
-    def forward(self, x):
-        x = self.features(x)
-        x = self.avgpool(x)
-        x = x.view(x.size(0), -1)
-        x = self.fc(x)
-
-        return x
+    # def forward(self, x):
+    #     x = self.features(x)
+    #     x = self.avgpool(x)
+    #     x = x.view(x.size(0), -1)
+    #     x = self.fc(x)
+    #
+    #     return x
 
 # used
 def resnet18(**kwargs):

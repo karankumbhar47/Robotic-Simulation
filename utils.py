@@ -5,9 +5,7 @@ from pathlib import Path
 import numpy as np
 from matplotlib import cm
 from munch import Munch
-from PIL import Image
 from prompt_toolkit.shortcuts import radiolist_dialog
-from skimage.draw import circle_perimeter
 
 from envs import VectorEnv
 from policies import DQNPolicy, DQNIntentionPolicy
@@ -33,9 +31,6 @@ def get_logs_dir():
 #used
 def get_checkpoints_dir():
     return Path('checkpoints')
-
-def get_eval_dir():
-    return Path('eval')
 
 #used
 def setup_run(config_path):
@@ -100,6 +95,7 @@ def select_run():
 
 JET = np.array([list(cm.jet(i)[:3]) for i in range(256)], dtype=np.float32)
 
+
 def to_uint8_image(image):
     return np.round(255.0 * image).astype(np.uint8)
 
@@ -137,29 +133,6 @@ def get_state_output_visualization(state, output):
             panels.append(vertical_bar)
     return np.concatenate(panels, axis=1)
 
-def get_reward_image(reward, state_width, reward_image_height=12):
-    import cv2
-    reward_image = np.zeros((reward_image_height, state_width, 3), dtype=np.float32)
-    text = '{:+.02f}'.format(reward)
-    cv2.putText(reward_image, text, (state_width - 5 * len(text), 8), cv2.FONT_HERSHEY_SIMPLEX, 0.25, (1, 1, 1))
-    return reward_image
-
-def get_transition_visualization(state=None, action=None, reward=0):
-    state_width = VectorEnv.get_state_width()
-    if state is None:
-        state = np.zeros((state_width, state_width, 3), dtype=np.float32)
-    state_vis = get_state_visualization(state)
-    if action is not None:
-        i, j = np.unravel_index(action % (state.shape[0] * state.shape[1]), (state.shape[0], state.shape[1]))
-        color = (1, 0, 0) if action < state_width * state_width else (0.5, 0, 0)
-        rr, cc = circle_perimeter(i, j, 2)
-        state_vis[rr, cc, :] = color
-    reward_image = get_reward_image(reward, state_vis.shape[1])
-    return np.concatenate((reward_image, state_vis), axis=0)
-
-def enlarge_image(image, scale_factor=4):
-    return image.resize((scale_factor * image.size[0], scale_factor * image.size[1]), resample=Image.NEAREST)
-
 ################################################################################
 # Policies
 
@@ -171,21 +144,6 @@ def get_policy_from_cfg(cfg, *args, **kwargs):
 ################################################################################
 # Environment
 
-def apply_misc_env_modifications(cfg_or_kwargs, env_name):
-	# Room size
-    if env_name.startswith('large'):
-        cfg_or_kwargs['room_length'] = 1.0
-        cfg_or_kwargs['room_width'] = 1.0
-        cfg_or_kwargs['num_cubes'] = 20
-    else:
-        cfg_or_kwargs['room_length'] = 1.0
-        cfg_or_kwargs['room_width'] = 0.5
-        cfg_or_kwargs['num_cubes'] = 10
-
-    # No receptacle for rescue robots
-    if any('rescue_robot' in g for g in cfg_or_kwargs['robot_config']):
-        cfg_or_kwargs['use_distance_to_receptacle_map'] = False
-        cfg_or_kwargs['use_shortest_path_to_receptacle_map'] = False
 
 # used
 def get_env_from_cfg(cfg, **kwargs):
@@ -203,14 +161,4 @@ def get_env_from_cfg(cfg, **kwargs):
             if arg_name not in {'use_robot_map', 'intention_map_scale', 'intention_map_line_thickness'}:
                 raise Exception
     final_kwargs.update(kwargs)
-
-    # Additional modifications for real robot
-    #if 'real' in final_kwargs:
-    #    final_kwargs['show_gui'] = True
-    #    final_kwargs['show_debug_annotations'] = True
-
-    #    # Remove randomness from obstacle placement
-    #    if final_kwargs['env_name'] in {'small_divider', 'large_doors', 'large_tunnels', 'large_rooms'}:
-    #        final_kwargs['env_name'] = '{}_norand'.format(final_kwargs['env_name'])
-
     return VectorEnv(**final_kwargs)

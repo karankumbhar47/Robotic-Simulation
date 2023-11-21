@@ -20,3 +20,9 @@ anki-vector==0.6.0
 zeroconf==0.24.0
 opencv-contrib-python==4.4.0.44
 pyglet==1.5.7
+
+numpy~=1.19.2
+matplotlib~=3.5.3
+torchvision~=0.4.0
+pillow~=6.2.2
+setuptools~=65.6.3
