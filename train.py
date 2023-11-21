@@ -25,18 +25,22 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 Transition = namedtuple('Transition', ('state', 'action', 'reward', 'next_state'))
 
+#used
 class ReplayBuffer:
+    #used
     def __init__(self, capacity):
         self.capacity = capacity
         self.buffer = []
         self.position = 0
 
+    #used
     def push(self, *args):
         if len(self.buffer) < self.capacity:
             self.buffer.append(None)
         self.buffer[self.position] = Transition(*args)
         self.position = (self.position + 1) % self.capacity
 
+    #used
     def sample(self, batch_size):
         transitions = random.sample(self.buffer, batch_size)
         return Transition(*zip(*transitions))
@@ -44,18 +48,22 @@ class ReplayBuffer:
     def __len__(self):
         return len(self.buffer)
 
+#used
 class TransitionTracker:
+    #used
     def __init__(self, initial_state):
         self.num_buffers = len(initial_state)
         self.prev_state = initial_state
         self.prev_action = [[None for _ in g] for g in self.prev_state]
 
+    #used
     def update_action(self, action):
         for i, g in enumerate(action):
             for j, a in enumerate(g):
                 if a is not None:
                     self.prev_action[i][j] = a
 
+    #used
     def update_step_completed(self, reward, state, done):
         transitions_per_buffer = [[] for _ in range(self.num_buffers)]
         for i, g in enumerate(state):
@@ -67,44 +75,54 @@ class TransitionTracker:
                     self.prev_state[i][j] = s
         return transitions_per_buffer
 
+#used
 class AverageMeter:
+    #used
     def __init__(self):
         self.val = 0
         self.avg = 0
         self.sum = 0
         self.count = 0
 
+    #not used
     def reset(self):
         self.val = 0
         self.avg = 0
         self.sum = 0
         self.count = 0
 
+    #not used
     def update(self, val, n=1):
         self.val = val
         self.sum += val * n
         self.count += n
         self.avg = self.sum / self.count
 
+#used
 class Meters:
     def __init__(self):
         self.meters = {}
 
+    #used
     def get_names(self):
         return self.meters.keys()
 
+    #used
     def reset(self):
         for meter in self.meters.values():
             meter.reset()
 
+    #used
     def update(self, name, val):
         if name not in self.meters:
             self.meters[name] = AverageMeter()
         self.meters[name].update(val)
 
+    #used
     def avg(self, name):
         return self.meters[name].avg
 
+#used
 def train(cfg, policy_net, target_net, optimizer, batch, transform_fn, discount_factor):
     state_batch = torch.cat([transform_fn(s) for s in batch.state]).to(device)  # (32, 4, 96, 96)
     action_batch = torch.tensor(batch.action, dtype=torch.long).to(device)  # (32,)
@@ -140,6 +158,7 @@ def train(cfg, policy_net, target_net, optimizer, batch, transform_fn, discount_
 
     return train_info
 
+#used
 def train_intention(intention_net, optimizer, batch, transform_fn):
     # Expects last channel of the state representation to be the ground truth intention map
     state_batch = torch.cat([transform_fn(s[:, :, :-1]) for s in batch.state]).to(device)  # (32, 4 or 5, 96, 96)
@@ -157,6 +176,7 @@ def train_intention(intention_net, optimizer, batch, transform_fn):
 
     return train_info
 
+#used
 def main(cfg):
     # Set up logging and checkpointing
     log_dir = Path(cfg.log_dir)

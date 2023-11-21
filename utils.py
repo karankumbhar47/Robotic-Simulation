@@ -15,24 +15,29 @@ from policies import DQNPolicy, DQNIntentionPolicy
 ################################################################################
 # Experiment management
 
+# used
 def load_config(config_path):
     with open(config_path, 'r') as f:
         cfg = Munch.fromYAML(f)
     return cfg
 
+#used
 def save_config(config_path, cfg):
     with open(config_path, 'w') as f:
         f.write(cfg.toYAML())
 
+#used
 def get_logs_dir():
     return Path('logs')
 
+#used
 def get_checkpoints_dir():
     return Path('checkpoints')
 
 def get_eval_dir():
     return Path('eval')
 
+#used
 def setup_run(config_path):
     cfg = load_config(config_path)
 
@@ -114,6 +119,7 @@ def get_overhead_image(state):
 def get_output_visualization(overhead_image, output, alpha=0.5):
     return (1 - alpha) * overhead_image + alpha * JET[output, :]
 
+#used
 def get_state_output_visualization(state, output):
     panels = []
     vertical_bar = np.zeros((state.shape[1], 1, 3), dtype=np.float32)
@@ -157,6 +163,7 @@ def enlarge_image(image, scale_factor=4):
 ################################################################################
 # Policies
 
+#used
 def get_policy_from_cfg(cfg, *args, **kwargs):
     policy_cls = DQNIntentionPolicy if cfg.use_predicted_intention else DQNPolicy
     return policy_cls(cfg, *args, **kwargs)
@@ -180,6 +187,7 @@ def apply_misc_env_modifications(cfg_or_kwargs, env_name):
         cfg_or_kwargs['use_distance_to_receptacle_map'] = False
         cfg_or_kwargs['use_shortest_path_to_receptacle_map'] = False
 
+# used
 def get_env_from_cfg(cfg, **kwargs):
     args_to_ignore = {'self',
         'show_debug_annotations', 'show_occupancy_maps',

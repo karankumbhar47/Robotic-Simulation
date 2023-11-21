@@ -7,7 +7,7 @@ from torchvision import transforms
 import networks
 from envs import VectorEnv
 
-
+#used
 class DQNPolicy:
     def __init__(self, cfg, train=False, random_seed=None):
         self.cfg = cfg
@@ -32,6 +32,7 @@ class DQNPolicy:
                     self.policy_nets[i].eval()
             print("=> loaded policy '{}'".format(self.cfg.policy_path))
 
+    #used
     def build_policy_nets(self):
         policy_nets = []
         for robot_type in self.robot_group_types:
@@ -41,9 +42,11 @@ class DQNPolicy:
             ).to(self.device))
         return policy_nets
 
+    #used
     def apply_transform(self, s):
         return self.transform(s).unsqueeze(0)
 
+    #used
     def step(self, state, exploration_eps=None, debug=False):
         if exploration_eps is None:
             exploration_eps = self.cfg.final_exploration
@@ -73,6 +76,7 @@ class DQNPolicy:
 
         return action
 
+#used
 class DQNIntentionPolicy(DQNPolicy):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -86,6 +90,7 @@ class DQNIntentionPolicy(DQNPolicy):
                     self.intention_nets[i].eval()
             print("=> loaded intention network '{}'".format(self.cfg.policy_path))
 
+    #used
     def build_intention_nets(self):
         intention_nets = []
         for _ in range(self.num_robot_groups):
@@ -94,6 +99,7 @@ class DQNIntentionPolicy(DQNPolicy):
             ).to(self.device))
         return intention_nets
 
+    #used
     def step_intention(self, state, debug=False):
         state_intention = [[None for _ in g] for g in state]
         output_intention = [[None for _ in g] for g in state]
@@ -116,6 +122,7 @@ class DQNIntentionPolicy(DQNPolicy):
 
         return state_intention
 
+    #used
     def step(self, state, exploration_eps=None, debug=False, use_ground_truth_intention=False):
         if self.train and use_ground_truth_intention:
             # Use the ground truth intention map
