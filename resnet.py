@@ -10,7 +10,7 @@ def conv3x3(in_planes, out_planes, stride=1):
     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
                      padding=1, bias=False)
 
-
+#used
 def conv1x1(in_planes, out_planes, stride=1):
     """1x1 convolution"""
     return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
@@ -46,9 +46,9 @@ class BasicBlock(nn.Module):
 
         return out
 
-
+#used
 class ResNet(nn.Module):
-
+    #used
     def __init__(self, block, layers, num_input_channels=3, num_classes=1000):
         super(ResNet, self).__init__()
         self.inplanes = 64
@@ -74,6 +74,7 @@ class ResNet(nn.Module):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
 
+    #used
     def _make_layer(self, block, planes, blocks, stride=1):
         downsample = None
         if stride != 1 or self.inplanes != planes:
@@ -111,7 +112,7 @@ class ResNet(nn.Module):
 
         return x
 
-
+# used
 def resnet18(**kwargs):
     """Constructs a ResNet-18 model.
     Args:
