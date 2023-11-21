@@ -1,4 +1,4 @@
-# Block Insertion using RL
+# Block Insertion using Robo Simulation
 
 GitHub Repository of this project can be found from below link:
 
