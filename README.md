@@ -32,26 +32,19 @@ python setup.py build_ext --inplace
 
 ## Quickstart
 
-We provide pre-trained policies for each test environment. To obtain these pre-trained policies, use the `download-pretrained.sh` script. Running this script will fetch the pre-trained policies and store their configurations in the `logs` directory, and their network weights in the `checkpoints` directory. Execute the following command to run the script:
-
-
 ```bash
-./download-pretrained.sh
+Create checkpoints using train.py 
 ```
 
 Then you can use `demos.py` to run a pretrained policy in the simulation environment. Here are a few examples you can try:
 
 ```bash
 # 4 lifting robots
-python demos.py --config-path logs/20201217T171233203789-lifting_4-small_divider-ours/config.yml
-python demos.py --config-path logs/20201214T092812731965-lifting_4-large_empty-ours/config.yml
+python demos.py --config-path logs/20231117T171233203789-lifting_4-small_divider-ours/config.yml
 
 # 4 pushing robots
-python demos.py --config-path logs/20201214T092814688334-pushing_4-small_divider-ours/config.yml
-python demos.py --config-path logs/20201217T171253620771-pushing_4-large_empty-ours/config.yml
+python demos.py --config-path ./logs/20231114T092757850335-pushing_4-small_empty-ours/config.yml
 
-# 2 lifting + 2 pushing
-python demos.py --config-path logs/20201214T092812868257-lifting_2_pushing_2-large_empty-ours/config.yml
 ```
 
 You can see the pretrained policy running in the PyBullet GUI that pops up. Here are a few examples of what it looks like (4x speed):
