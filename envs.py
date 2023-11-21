@@ -779,7 +779,7 @@ class Robot(ABC):
     def __init__(self, env, group_index, real=False, real_robot_index=None):
         self.env = env
         self.group_index = group_index
-        self.real = real
+        self.real = False
         self.id = self._create_multi_body()
         self.cid = self.env.p.createConstraint(self.id, -1, -1, -1, pybullet.JOINT_FIXED, None, (0, 0, 0), (0, 0, 0))
         self._last_step_simulation_count = -1  # Used to determine whether pose is out of date
@@ -792,7 +792,7 @@ class Robot(ABC):
         self.target_end_effector_position = None
         self.waypoint_positions = None
         self.waypoint_headings = None
-        self.controller = RealRobotController(self, real_robot_index, debug=self.env.real_debug) if real else RobotController(self)
+        self.controller = RobotController(self)
 
         # Collision detection
         self.collision_body_a_ids_set = set([self.id])
@@ -1454,20 +1454,6 @@ class Camera(ABC):
     def _get_camera_params(self, robot_position, robot_heading):
         pass
 
-class OverheadCamera(Camera):
-    HEIGHT = 1  # 1 m
-    ASPECT = 1
-    NEAR = 0.1  # 10 cm
-    FAR = 10  # 10 m
-
-    def __init__(self, env):
-        super().__init__(env)
-
-    def _get_camera_params(self, robot_position, robot_heading):
-        camera_position = (robot_position[0], robot_position[1], OverheadCamera.HEIGHT)
-        camera_target = (robot_position[0], robot_position[1], 0)
-        camera_up = (math.cos(robot_heading), math.sin(robot_heading), 0)
-        return camera_position, camera_target, camera_up
 
 class ForwardFacingCamera(Camera):
     HEIGHT = Robot.HEIGHT
@@ -1511,8 +1497,6 @@ class Mapper:
         # Camera
         if self.env.use_partial_observations:
             self.camera = ForwardFacingCamera(self.env)
-        else:
-            self.camera = OverheadCamera(self.env)
 
         # Overhead map
         self.global_overhead_map_without_robots = self._create_padded_room_zeros()
@@ -1600,75 +1584,6 @@ class Mapper:
         if self.env.use_intention_channels:
             intention_channels = self._get_intention_channels()
             channels.extend(intention_channels)
-
-        if save_figures:
-            from PIL import Image; import utils  # pylint: disable=import-outside-toplevel
-            #print(self.robot.get_position(), self.robot.get_heading())
-            output_dir = Path('figures') / 'robot_id_{}'.format(self.robot.id)
-            if not output_dir.exists():
-                output_dir.mkdir(parents=True)
-
-            def global_map_room_only(global_map):
-                crop_width = Mapper.round_up_to_even((self.env.room_length + 2 * Robot.HALF_WIDTH) * Mapper.LOCAL_MAP_PIXELS_PER_METER)
-                crop_height = Mapper.round_up_to_even((self.env.room_width + 2 * Robot.HALF_WIDTH) * Mapper.LOCAL_MAP_PIXELS_PER_METER)
-                start_i = global_map.shape[0] // 2 - crop_height // 2
-                start_j = global_map.shape[1] // 2 - crop_width // 2
-                return global_map[start_i:start_i + crop_height, start_j:start_j + crop_width]
-
-            # Environment
-            Image.fromarray(self.env.get_camera_image()).save(output_dir / 'env.png')
-
-            def visualize_overhead_map(global_overhead_map, local_overhead_map):
-                brightness_scale_factor = 1.33
-                global_overhead_map_vis = brightness_scale_factor * global_map_room_only(global_overhead_map)
-                local_overhead_map_vis = brightness_scale_factor * local_overhead_map
-                return global_overhead_map_vis, local_overhead_map_vis
-
-            # Overhead map
-            global_overhead_map_vis, local_overhead_map_vis = visualize_overhead_map(global_overhead_map, local_overhead_map)
-            utils.enlarge_image(Image.fromarray(utils.to_uint8_image(global_overhead_map_vis))).save(output_dir / 'global-overhead-map.png')
-            utils.enlarge_image(Image.fromarray(utils.to_uint8_image(local_overhead_map_vis))).save(output_dir / 'local-overhead-map.png')
-
-            def visualize_map(overhead_map_vis, distance_map):
-                overhead_map_vis = np.stack(3 * [overhead_map_vis], axis=2)
-                distance_map_vis = utils.JET[utils.to_uint8_image(distance_map), :]
-                return 0.5 * overhead_map_vis + 0.5 * distance_map_vis
-
-            def save_map_visualization(global_map, local_map, suffix, brightness_scale_factor=1):
-                global_map_vis = global_map_room_only(global_map)
-                global_map_vis = visualize_map(global_overhead_map_vis, brightness_scale_factor * global_map_vis)
-                utils.enlarge_image(Image.fromarray(utils.to_uint8_image(global_map_vis))).save(output_dir / 'global-{}.png'.format(suffix))
-                local_map = visualize_map(local_overhead_map_vis, brightness_scale_factor * local_map)
-                utils.enlarge_image(Image.fromarray(utils.to_uint8_image(local_map))).save(output_dir / 'local-{}.png'.format(suffix))
-
-            # Robot map
-            if self.env.use_robot_map:
-                save_map_visualization(global_robot_map, local_robot_map, 'robot-map')
-
-            # Shortest path distance to receptacle map
-            if self.env.use_shortest_path_to_receptacle_map:
-                save_map_visualization(global_shortest_path_to_receptacle_map, local_shortest_path_to_receptacle_map, 'shortest-path-to-receptacle-map', brightness_scale_factor=2)
-
-            # Shortest path distance map
-            if self.env.use_shortest_path_map:
-                save_map_visualization(global_shortest_path_map, local_shortest_path_map, 'shortest-path-map', brightness_scale_factor=2)
-
-            # History map
-            if self.env.use_history_map:
-                save_map_visualization(global_history_map, local_history_map, 'history-map')
-
-            # Intention map
-            if self.env.use_intention_map:
-                save_map_visualization(global_intention_map, local_intention_map, 'intention-map')
-
-            # Baseline intention channels
-            if self.env.use_intention_channels:
-                for i, channel in enumerate(intention_channels):
-                    utils.enlarge_image(Image.fromarray(utils.to_uint8_image(visualize_map(local_overhead_map_vis, np.abs(channel))))).save(output_dir / 'intention-channel{}.png'.format(i))
-
-            # Occupancy map
-            if self.env.show_occupancy_maps:
-                self.global_occupancy_map.save_figure(output_dir / 'global-occupancy-map.png')
 
         assert all(channel.dtype == np.float32 for channel in channels)
         return np.stack(channels, axis=2)
