@@ -2,8 +2,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import resnet
 
-
+#used
 class FCN(nn.Module):
+    #used
     def __init__(self, num_input_channels=3, num_output_channels=1):
         super().__init__()
         self.resnet18 = resnet.resnet18(num_input_channels=num_input_channels)
