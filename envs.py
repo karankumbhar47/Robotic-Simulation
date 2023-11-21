@@ -1235,7 +1235,6 @@ class LiftingRobot(RobotWithHooks):
         )
         self.env.p.resetBasePositionAndOrientation(self.cube_id, cube_position, heading_to_orientation(current_heading))
 
-
 class RobotController:
     DRIVE_STEP_SIZE = 0.005  # 5 mm results in exactly 1 mm per simulation step
     TURN_STEP_SIZE = math.radians(15)  # 15 deg results in exactly 3 deg per simulation step
