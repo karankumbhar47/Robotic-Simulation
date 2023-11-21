@@ -417,14 +417,14 @@ class VectorEnv:
                         robot.reset_pose(robot_pose['position'][0], robot_pose['position'][1], robot_pose['heading'])
 
                 if cube_poses is not None:
-                    if isinstance(robot, (LiftingRobot, ThrowingRobot)) and robot.cube_id is not None:
+                    if isinstance(robot, (LiftingRobot)) and robot.cube_id is not None:
                         cube_pose = cube_poses.get(self.real_cube_indices_map[robot.cube_id])
 
                         if cube_pose is not None:
                             if isinstance(robot, LiftingRobot):
                                 robot.controller.monitor_lifted_cube(cube_pose)
-                            elif isinstance(robot, ThrowingRobot):
-                                self.reset_cube_pose(robot.cube_id, cube_pose['position'][0], cube_pose['position'][1], cube_pose['heading'])
+                            # elif isinstance(robot, ThrowingRobot):
+                            #     self.reset_cube_pose(robot.cube_id, cube_pose['position'][0], cube_pose['position'][1], cube_pose['heading'])
 
                         # if isinstance(robot, RescueRobot):
                         #     robot.controller.monitor_rescued_cube(cube_pose)
@@ -1045,10 +1045,10 @@ class Robot(ABC):
             return PushingRobot
         if robot_type == 'lifting_robot':
             return LiftingRobot
-        if robot_type == 'throwing_robot':
-            return ThrowingRobot
-        # if robot_type == 'rescue_robot':
-            return RescueRobot
+        # if robot_type == 'throwing_robot':
+        #     return ThrowingRobot
+        # # if robot_type == 'rescue_robot':
+        #     return RescueRobot
         raise Exception(robot_type)
 
     @staticmethod
@@ -1275,96 +1275,6 @@ class LiftingRobot(RobotWithHooks):
         )
         self.env.p.resetBasePositionAndOrientation(self.cube_id, cube_position, heading_to_orientation(current_heading))
 
-class ThrowingRobot(RobotWithHooks):
-    BASE_LENGTH = Robot.BASE_LENGTH + 0.006  # 6 mm offset
-    END_EFFECTOR_LOCATION = Robot.BACKPACK_OFFSET + BASE_LENGTH
-    RADIUS = math.sqrt(Robot.HALF_WIDTH**2 + END_EFFECTOR_LOCATION**2)
-    COLOR = (0.5294, 0.5294, 0.5294, 1)  # Light gray
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.cube_id = None
-        self.initial_cube_position = None
-        self.cube_dist_closer = 0
-
-    def store_new_action(self, action):
-        super().store_new_action(action)
-        self.potential_cube_id = self.ray_test_cube() if self.action[0] == 1 else None
-        self.cube_dist_closer = 0
-
-    def process_cube_success(self, thrown=False):  # pylint: disable=arguments-differ
-        super().process_cube_success()
-        if thrown:
-            self.cubes_with_reward += 1
-
-    def compute_rewards_and_stats(self, done=False):
-        super().compute_rewards_and_stats(done=done)
-        partial_rewards = self.env.partial_rewards_scale * self.cube_dist_closer
-        self.reward += partial_rewards
-        self.cumulative_reward += partial_rewards
-
-    def prepare_throw_cube(self, cube_id):
-        # Update variables and environment state
-        self.cube_id = cube_id
-        self.env.available_cube_ids_set.remove(self.cube_id)
-
-        # Store initial cube position for partial rewards
-        self.initial_cube_position = self.env.get_cube_position(self.cube_id)
-
-    def throw_cube(self):
-        assert not self.real
-        # Move cube over back of robot
-        current_position, current_heading = self.get_position(), self.get_heading()
-        back_position = (
-            current_position[0] + Robot.BACKPACK_OFFSET * math.cos(current_heading),
-            current_position[1] + Robot.BACKPACK_OFFSET * math.sin(current_heading),
-            Robot.HEIGHT + VectorEnv.CUBE_WIDTH  # Half cube width above robot
-        )
-        self.env.p.resetBasePositionAndOrientation(self.cube_id, back_position, heading_to_orientation(current_heading))
-
-        # Apply force and torque
-        force_x = self.env.robot_random_state.normal(5.5, 0.75)
-        force_y = self.env.robot_random_state.normal(1.5, 0.75) * (-1 if self.env.robot_random_state.rand() < 0.5 else 1)
-        self.env.p.applyExternalForce(self.cube_id, -1, (-force_x, -force_y, 0), (0, 0, 0), flags=pybullet.LINK_FRAME)
-        self.env.p.applyExternalTorque(self.cube_id, -1, (0, -0.03, 0), flags=pybullet.WORLD_FRAME)  # See https://github.com/bulletphysics/bullet3/issues/1949
-
-    def finish_throw_cube(self):
-        # Process final cube position for partial rewards
-        cube_position = self.env.get_cube_position(self.cube_id)
-        dist_closer = self.mapper.distance_to_receptacle(self.initial_cube_position) - self.mapper.distance_to_receptacle(cube_position)
-        self.cube_dist_closer += dist_closer
-
-        # Update variables and environment state
-        if self.env.cube_position_in_receptacle(cube_position):
-            self.process_cube_success(thrown=True)
-            self.env.remove_cube(self.cube_id)
-        else:
-            self.env.available_cube_ids_set.add(self.cube_id)
-        self.cube_id = None
-
-# class RescueRobot(RobotWithHooks):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.cube_id = None
-
-    def store_new_action(self, action):
-        super().store_new_action(action)
-        self.potential_cube_id = self.ray_test_cube() if self.action[0] == 1 else None
-
-    def process_cube_success(self):
-        super().process_cube_success()
-        self.cubes_with_reward += 1
-
-    def prepare_rescue_cube(self, cube_id):
-        self.cube_id = cube_id
-        self.env.available_cube_ids_set.remove(cube_id)
-
-    def rescue_cube(self):
-        # Update variables and environment state
-        self.process_cube_success()
-        self.env.remove_cube(self.cube_id)
-        self.cube_id = None
-
 class RobotController:
     DRIVE_STEP_SIZE = 0.005  # 5 mm results in exactly 1 mm per simulation step
     TURN_STEP_SIZE = math.radians(15)  # 15 deg results in exactly 3 deg per simulation step
@@ -1467,8 +1377,8 @@ class RobotController:
             if self.manipulation_sim_steps >= self.manipulation_sim_step_target:
                 self.manipulation_sim_step_target = 0
                 self.manipulation_sim_steps = 0
-                if isinstance(self.robot, ThrowingRobot):
-                    self.robot.finish_throw_cube()
+                # if isinstance(self.robot, ThrowingRobot):
+                #     self.robot.finish_throw_cube()
                 self.state = 'idle'
 
     def get_intention_path(self):
@@ -1492,11 +1402,11 @@ class RobotController:
                 if cube_id is not None:
                     if isinstance(self.robot, LiftingRobot):
                         self.robot.lift_cube(cube_id)
-                    elif isinstance(self.robot, ThrowingRobot):
-                        self.robot.prepare_throw_cube(cube_id)
-                        self.robot.throw_cube()
-                        self.state = 'manipulating'
-                        self.manipulation_sim_step_target = 100
+                    # elif isinstance(self.robot, ThrowingRobot):
+                    #     self.robot.prepare_throw_cube(cube_id)
+                    #     self.robot.throw_cube()
+                    #     self.state = 'manipulating'
+                    #     self.manipulation_sim_step_target = 100
 
 class RealRobotController:
     LOOKAHEAD_DISTANCE = 0.1  # 10 cm
@@ -1792,10 +1702,10 @@ class RealRobotController:
         if isinstance(self.robot, (LiftingRobot, RescueRobot)):
             self.real_robot.behavior.set_lift_height(0.85)  # Using 1.0 causes the marker on top of the robot to be occluded
             self.state = 'lifting'
-        elif isinstance(self.robot, ThrowingRobot):
-            self.robot.prepare_throw_cube(self.target_cube_id)
-            self.real_robot.motors.set_lift_motor(8.0)
-            self.state = 'throwing'
+        # elif isinstance(self.robot, ThrowingRobot):
+        #     self.robot.prepare_throw_cube(self.target_cube_id)
+        #     self.real_robot.motors.set_lift_motor(8.0)
+        #     self.state = 'throwing'
 
     def _done_lifting(self):
         if isinstance(self.robot, LiftingRobot):
