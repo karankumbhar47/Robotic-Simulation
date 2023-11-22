@@ -49,7 +49,6 @@ class VectorEnv:
             inactivity_cutoff_per_robot=100,
             random_seed=None, use_egl_renderer=False,
             show_gui=False, show_debug_annotations=False, show_occupancy_maps=False,
-            real=False, 
         ):
 
         ################################################################################
@@ -99,7 +98,6 @@ class VectorEnv:
         self.show_occupancy_maps = show_occupancy_maps
 
         # Real environment
-        self.real = False
 
         pprint(self.__dict__)
 
@@ -171,12 +169,9 @@ class VectorEnv:
         self.inactivity_steps = None
 
         ################################################################################
-        # Real environment
-
 
     # used
     def reset(self):
-        # Disconnect robots
 
         # Reset pybullet
         self.p.resetSimulation()
@@ -185,11 +180,14 @@ class VectorEnv:
 
         # Create env
         self._create_env()
+<<<<<<< HEAD
         if self.real:
             self.real_robot_indices_map = dict(
                 zip(self.robot_ids, self.real_robot_indices))
             self.real_cube_indices_map = dict(
                 zip(self.cube_ids, self.real_cube_indices))
+=======
+>>>>>>> 659f367 (Code Cleaning)
 
         # Reset poses
         self._reset_poses()
@@ -320,8 +318,6 @@ class VectorEnv:
         if not self.show_gui and self.use_egl_renderer:
             self.p.unloadPlugin(self.plugin_id)
         self.p.disconnect()
-        if self.real:
-            self._disconnect_robots()
 
     def step_simulation(self):
         self.p.stepSimulation()
@@ -389,6 +385,7 @@ class VectorEnv:
 
         # Get new pose estimates
         for conn in self.conns:
+<<<<<<< HEAD
             if self.real_debug:
                 debug_data = [(robot.waypoint_positions, robot.target_end_effector_position,
                                robot.controller.debug_data) for robot in self.robots]
@@ -397,6 +394,9 @@ class VectorEnv:
                 conn.send(debug_data)
             else:
                 conn.send(None)
+=======
+            conn.send(None)
+>>>>>>> 659f367 (Code Cleaning)
 
         for conn in self.conns:
             robot_poses, cube_poses = conn.recv()
@@ -434,6 +434,7 @@ class VectorEnv:
         # Assertions
         assert self.room_length >= self.room_width
         assert self.num_cubes > 0
+<<<<<<< HEAD
         # Each robot group should be homogeneous
         assert all(len(g) == 1 for g in self.robot_config)
         # More than 4 groups not supported
@@ -441,6 +442,10 @@ class VectorEnv:
         if any('rescue_robot' in g for g in self.robot_config):
             assert all(
                 robot_type == 'rescue_robot' for g in self.robot_config for robot_type in g)
+=======
+        assert all(len(g) == 1 for g in self.robot_config)  # Each robot group should be homogeneous
+        assert not len(self.robot_group_types) > 4  # More than 4 groups not supported
+>>>>>>> 659f367 (Code Cleaning)
 
         # Create floor
         floor_thickness = 10
@@ -533,9 +538,6 @@ class VectorEnv:
         if self.env_name.startswith('small'):
             assert math.isclose(self.room_length, 1)
             assert math.isclose(self.room_width, 0.5)
-        elif self.env_name.startswith('large'):
-            assert math.isclose(self.room_length, 1)
-            assert math.isclose(self.room_width, 1)
 
         def add_divider(x_offset=0):
             divider_width = 0.05
@@ -547,6 +549,7 @@ class VectorEnv:
             self.cube_spawn_bounds = (
                 None, x_offset - divider_width / 2, None, None)
 
+<<<<<<< HEAD
         def add_tunnels(tunnel_length, x_offset=0, y_offset=0):
             tunnel_width = 0.18
             tunnel_x = (self.room_length + tunnel_width) / 6 + x_offset
@@ -579,6 +582,8 @@ class VectorEnv:
             obstacles.append({'type': 'divider', 'position': (x_offset, bot_divider_y), 'heading': 0,
                              'x_len': divider_width, 'y_len': bot_divider_len, 'snap_y': y_offset - divider_width / 2})
 
+=======
+>>>>>>> 659f367 (Code Cleaning)
         # Walls
         obstacles = []
         for x, y, length, width in [
@@ -595,15 +600,14 @@ class VectorEnv:
                 x, y), 'heading': 0, 'x_len': length, 'y_len': width})
 
         # Other obstacles
-        if self.env_name == 'small_empty':
-            pass
 
-        elif self.env_name == 'small_divider_norand':
+        if self.env_name == 'small_divider_norand':
             add_divider()
 
         elif self.env_name == 'small_divider':
             add_divider(x_offset=self.room_random_state.uniform(-0.1, 0.1))
 
+<<<<<<< HEAD
         elif self.env_name == 'large_empty':
             pass
 
@@ -627,6 +631,8 @@ class VectorEnv:
         elif self.env_name == 'large_rooms':
             add_rooms(x_offset=self.room_random_state.uniform(-0.05, 0.05),
                       y_offset=self.room_random_state.uniform(-0.05, 0.05))
+=======
+>>>>>>> 659f367 (Code Cleaning)
 
         else:
             raise Exception(self.env_name)
@@ -637,12 +643,21 @@ class VectorEnv:
         rounded_corner_width = 0.1006834873
         # Room corners
         for i, (x, y) in enumerate([
+<<<<<<< HEAD
             (-self.room_length / 2, self.room_width / 2),
             (self.room_length / 2, self.room_width / 2),
             (self.room_length / 2, -self.room_width / 2),
             (-self.room_length / 2, -self.room_width / 2),
         ]):
             if any('rescue_robot' in g for g in self.robot_config) or distance((x, y), self.receptacle_position) > (1 + 1e-6) * (VectorEnv.RECEPTACLE_WIDTH / 2) * math.sqrt(2):
+=======
+                (-self.room_length / 2, self.room_width / 2),
+                (self.room_length / 2, self.room_width / 2),
+                (self.room_length / 2, -self.room_width / 2),
+                (-self.room_length / 2, -self.room_width / 2),
+            ]):
+            if distance((x, y), self.receptacle_position) > (1 + 1e-6) * (VectorEnv.RECEPTACLE_WIDTH / 2) * math.sqrt(2):
+>>>>>>> 659f367 (Code Cleaning)
                 heading = -math.radians(i * 90)
                 offset = rounded_corner_width / math.sqrt(2)
                 adjusted_position = (x + offset * math.cos(heading - math.radians(45)),
@@ -650,6 +665,7 @@ class VectorEnv:
                 obstacles.append(
                     {'type': 'corner', 'position': adjusted_position, 'heading': heading})
 
+<<<<<<< HEAD
         # Corners between walls and dividers
         new_obstacles = []
         for obstacle in obstacles:
@@ -692,6 +708,8 @@ class VectorEnv:
                             {'type': 'corner', 'position': adjusted_position, 'heading': heading})
         obstacles.extend(new_obstacles)
 
+=======
+>>>>>>> 659f367 (Code Cleaning)
         return obstacles
 
     def _reset_poses(self):
@@ -816,40 +834,6 @@ class VectorEnv:
 
         return sim_steps
 
-    def _execute_actions_real(self):
-        assert self.real
-
-        # If debug mode is enabled, all robots will pause and resume actions during any robot's action selection
-        if self.real_debug:
-            for robot in self.robots:
-                robot.controller.resume()
-
-        sim_steps = 0
-        any_idle = False
-        while True:
-            if not any_idle and any(robot.is_idle() for robot in self.robots):
-                any_idle = True
-                if self.real_debug:
-                    for robot in self.robots:
-                        robot.controller.pause()
-
-            if any_idle:
-                # If debug mode is enabled, do not exit loop until all robots have actually stopped moving
-                if not self.real_debug or all((robot.is_idle() or robot.controller.state == 'paused') for robot in self.robots):
-                    break
-
-            self.update_poses()
-            sim_steps += 1
-            for robot in self.robots:
-                robot.step()
-
-        return sim_steps
-
-    def _disconnect_robots(self):
-        assert self.real
-        if self.robots is not None:
-            for robot in self.robots:
-                robot.controller.disconnect()
 
 
 class Robot(ABC):

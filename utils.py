@@ -204,13 +204,4 @@ def get_env_from_cfg(cfg, **kwargs):
                 raise Exception
     final_kwargs.update(kwargs)
 
-    # Additional modifications for real robot
-    #if 'real' in final_kwargs:
-    #    final_kwargs['show_gui'] = True
-    #    final_kwargs['show_debug_annotations'] = True
-
-    #    # Remove randomness from obstacle placement
-    #    if final_kwargs['env_name'] in {'small_divider', 'large_doors', 'large_tunnels', 'large_rooms'}:
-    #        final_kwargs['env_name'] = '{}_norand'.format(final_kwargs['env_name'])
-
     return VectorEnv(**final_kwargs)
